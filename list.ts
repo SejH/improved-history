@@ -58,13 +58,21 @@ export default class List {
     }
   }
 
-  async renderList(list: ListItem[]) {
+  private hideCursor() {
+    Deno.stdout.write(new TextEncoder().encode("\u001B[?25l"));
+  }
+
+  private showCursor() {
+    Deno.stdout.write(new TextEncoder().encode("\u001B[?25h"));
+  }
+
+  private async renderList(list: ListItem[]) {
     const lens: number[] = [];
     Deno.stdin.setRaw(true);
     const input = Deno.stdin;
     const output = Deno.stdout;
 
-    await output.write(new TextEncoder().encode("\u001B[?25l")); // hides cursor
+    this.hideCursor();
     for (const item of list) {
       const formattedItem = item.format();
       lens.push(formattedItem.length + 1);
@@ -74,6 +82,7 @@ export default class List {
         await output.write(new TextEncoder().encode("\n"));
       }
     }
+    this.showCursor();
 
     const data = new Uint8Array(3);
     const n = await input.read(data);
@@ -114,6 +123,7 @@ export default class List {
       break;
     }
 
+    this.hideCursor();
     // clear list to rerender it
     for (let i = lens.length - 1; i > 0; --i) {
       // go to beginning of line
@@ -125,6 +135,6 @@ export default class List {
     }
     // clear the first line
     await output.write(new TextEncoder().encode("\x1b[K"));
-    await output.write(new TextEncoder().encode("\u001B[?25h")); // show cursor
+    this.showCursor();
   }
 }
