@@ -9,6 +9,7 @@ function logToFile(...args: any[]) {
 }
 
 export default class List {
+  private displayRange: number = 20;
   private selectedIndex = 0;
   private running = true;
   private listItems: ListItem[] = [];
@@ -94,14 +95,13 @@ export default class List {
   }
 
   async render() {
-    const range = 10;
-    let start = this.selectedIndex - range / 2;
-    let end = this.selectedIndex + range / 2;
+    let start = this.selectedIndex - this.displayRange / 2;
+    let end = this.selectedIndex + this.displayRange / 2;
     if (start < 0) {
       start = 0;
-      end = range;
+      end = this.displayRange;
     } else if (end > this.listItems.length - 1) {
-      start = this.listItems.length - range;
+      start = this.listItems.length - this.displayRange;
       end = this.listItems.length;
     }
 
