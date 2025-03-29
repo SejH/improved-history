@@ -14,16 +14,27 @@ export default class List {
     }));
   }
 
-  up() {
+  onUp() {
     this.selectedIndex = this.selectedIndex === 0 ? this.listItems.length - 1 : this.selectedIndex - 1;
   }
 
-  down() {
+  onDown() {
     this.selectedIndex = (this.selectedIndex + 1) % this.listItems.length;
   }
 
-  enter() {
+  onEnter() {
     this.running = false;
+  }
+
+  onSpace() {
+
+  }
+
+  onText(s: string | null) {
+    if (s === null)
+      this.query = this.query.slice(0, this.query.length - 1);
+    else
+      this.query += s;
   }
 
   async render() {
@@ -38,22 +49,9 @@ export default class List {
       end = this.listItems.length;
     }
 
-    const items = this.listItems.slice(start, end);
-    items.push({ format: () => `Search: ${this.query}` });
-
-    await renderList({
-      items,
-      onEnter: this.enter.bind(this),
-      onUp: this.up.bind(this),
-      onDown: this.down.bind(this),
-      onSpace: () => {},
-      onText: (s: string | null) => {
-        if (s === null)
-          this.query = this.query.slice(0, this.query.length - 1);
-        else
-        this.query += s;
-      },
-    });
+    const list = this.listItems.slice(start, end);
+    list.push({ format: () => `Search: ${this.query}` });
+    await this.renderList(list);
   }
 
   async display() {
@@ -61,95 +59,74 @@ export default class List {
       await this.render();
     }
   }
-}
 
-async function renderList({
-  items,
+  async renderList(list: ListItem[]) {
+    const lens: number[] = [];
+    Deno.stdin.setRaw(true);
+    const input = Deno.stdin;
+    const output = Deno.stdout;
 
-  onEnter,
-  onSpace,
-  onDown,
-  onUp,
-  onText,
-}: {
-  items: ListItem[];
+    await output.write(new TextEncoder().encode("\u001B[?25l")); // hides cursor
+    for (const item of list) {
+      const formattedItem = item.format();
+      lens.push(formattedItem.length + 1);
+      await output.write(new TextEncoder().encode(formattedItem));
 
-  onEnter: () => void;
-  onSpace?: () => void;
-  onUp: () => void;
-  onDown: () => void;
-  onText: (s: string | null) => void;
-}) {
-  const lens: number[] = [];
-  Deno.stdin.setRaw(true);
-  const input = Deno.stdin;
-  const output = Deno.stdout;
-
-  await output.write(new TextEncoder().encode("\u001B[?25l")); // hides cursor
-
-  for (const item of items) {
-    const formattedItem = item.format();
-    lens.push(formattedItem.length + 1);
-    await output.write(new TextEncoder().encode(formattedItem));
-
-    if (item !== items[items.length - 1]) {
-      await output.write(new TextEncoder().encode("\n"));
+      if (item !== list[list.length - 1]) {
+        await output.write(new TextEncoder().encode("\n"));
+      }
     }
-  }
 
-  const data = new Uint8Array(3);
-  const n = await input.read(data);
+    const data = new Uint8Array(3);
+    const n = await input.read(data);
 
-  if (!n) {
-    return;
-  }
+    if (!n) {
+      return;
+    }
 
-  const str = new TextDecoder().decode(data.slice(0, n));
+    const str = new TextDecoder().decode(data.slice(0, n));
 
-  switch (str) {
-    case "\u0003": // ETX
-    case "\u0004": // EOT
+    switch (str) {
+      case "\u0003": // ETX
+      case "\u0004": // EOT
       throw new Error("Terminated by user.");
 
-    case "\r": // CR
-    case "\n": // LF
-      onEnter();
+      case "\r": // CR
+      case "\n": // LF
+      this.onEnter();
       break;
 
-    case "\u0020": // SPACE
-      if (onSpace) {
-        onSpace();
-      }
+      case "\u0020": // SPACE
+      this.onSpace();
       break;
 
-    case "\u001b[A": // UP
-      onUp();
+      case "\u001b[A": // UP
+      this.onUp();
       break;
 
-    case "\u001b[B": // DOWN
-      onDown();
+      case "\u001b[B": // DOWN
+      this.onDown();
       break;
-    case "\u0008": // BACKSPACE
-    case "\u007F": // BACKSPACE
-      onText(null);
+      case "\u0008": // BACKSPACE
+      case "\u007F": // BACKSPACE
+      this.onText(null);
       break;
-    default:
-      onText(str);
+      default:
+      this.onText(str);
       break;
-  }
-//  await output.write(new TextEncoder().encode("\u001B[?25h")); // show cursor
-//  return;
+    }
 
-  // clear list to rerender it
-  for (let i = lens.length - 1; i > 0; --i) {
-    // go to beginning of line
-    await output.write(new TextEncoder().encode("\r"));
-    // clear line
+    // clear list to rerender it
+    for (let i = lens.length - 1; i > 0; --i) {
+      // go to beginning of line
+      await output.write(new TextEncoder().encode("\r"));
+      // clear line
+      await output.write(new TextEncoder().encode("\x1b[K"));
+      // go up
+      await output.write(new TextEncoder().encode("\x1b[A"));
+    }
+    // clear the first line
     await output.write(new TextEncoder().encode("\x1b[K"));
-    // go up
-    await output.write(new TextEncoder().encode("\x1b[A"));
+    await output.write(new TextEncoder().encode("\u001B[?25h")); // show cursor
   }
-  // clear the first line
-  await output.write(new TextEncoder().encode("\x1b[K"));
-  await output.write(new TextEncoder().encode("\u001B[?25h")); // show cursor
 }
