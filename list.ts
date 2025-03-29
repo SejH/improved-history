@@ -65,9 +65,7 @@ export default class List {
 
     if (this.query.length > 0) {
       this.searchResults = this.search();
-      // logToFile("search", this.searchResults);
       if (this.searchResults.length > 0) {
-        // find next match after current selection
         this.searchIndex = this.searchResults.findIndex(i => i >= this.selectedIndex);
         if (this.searchIndex === -1)
           this.searchIndex = this.searchResults.length - 1;
@@ -158,12 +156,8 @@ export default class List {
       return;
     }
 
-    // logToFile("input:", data.slice(0, n).map(x => x.toString(16)).join(","));
-    logToFile("input:", data.slice(0, n));
-
     const str = new TextDecoder().decode(data.slice(0, n));
-    logToFile('len:', str.length)
-    logToFile('input:', str, '\n');
+
     switch (str) {
       case "\u0003": // ETX
       case "\u0004": // EOT
@@ -171,7 +165,6 @@ export default class List {
 
       case "\r": // CR
       case "\n": // LF
-      logToFile('enter!');
       this.onEnter();
       break;
 
@@ -182,23 +175,23 @@ export default class List {
       this.searchDown();
       break;
 
-      case "\u001bn":
+      case "\u001bn": // M-n
         this.onEnd();
       break;
 
-      case "\u001bp":
+      case "\u001bp": // M-p
         this.onStart();
       break;
 
       case "\u001b[A": // UP
-      case "\u001bOA":
-      case "\u0010":
+      case "\u001bOA": // UP
+      case "\u0010": // Crl-p
       this.onUp();
       break;
 
       case "\u001b[B": // DOWN
-      case "\u001bOB":
-      case "\u000e":
+      case "\u001bOB": // DOWN
+      case "\u000e": // Crl-n
       this.onDown();
       break;
 
@@ -224,5 +217,6 @@ export default class List {
     // clear the first line
     await output.write(new TextEncoder().encode("\x1b[K"));
     this.showCursor();
+    Deno.stdin.setRaw(false);
   }
 }
