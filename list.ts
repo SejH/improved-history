@@ -17,7 +17,7 @@ export default class List {
   }
 
   onUp() {
-    this.selectedIndex = this.selectedIndex === 0 ? this.listItems.length - 1 : this.selectedIndex - 1;
+    this.selectedIndex = (this.selectedIndex - 1 + this.listItems.length) % this.listItems.length;
   }
 
   onDown() {
