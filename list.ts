@@ -4,13 +4,20 @@ type ListItem = {
 
 const BACKSPACE = null;
 
+function logToFile(...args: any[]) {
+  // Deno.writeTextFile("./list.log", args.join(" ") + "\n", { append: true });
+}
+
 export default class List {
   private selectedIndex = 0;
   private running = true;
   private listItems: ListItem[] = [];
   private query = '';
+  private searchResults: number[] = [];
+  private searchIndex: number | null = null;
 
   constructor(private items: string[]) {
+    this.selectedIndex = this.items.length - 1;
     this.listItems = this.items.map((x, i) => ({
       format: () => this.selectedIndex === i ? `> ${x}` : `  ${x}`,
     }));
@@ -24,8 +31,29 @@ export default class List {
     this.selectedIndex = (this.selectedIndex + 1) % this.listItems.length;
   }
 
+  onStart() {
+    this.selectedIndex = 0;
+  }
+
+  onEnd() {
+    this.selectedIndex = this.listItems.length - 1;
+  }
+
   onEnter() {
     this.running = false;
+  }
+
+  searchUp() {
+    if (this.searchIndex === null)
+      return;
+    this.searchIndex = (this.searchIndex - 1 + this.searchResults.length) % this.searchResults.length;
+    this.selectedIndex = this.searchResults[this.searchIndex];
+  }
+  searchDown() {
+    if (this.searchIndex === null)
+      return;
+    this.searchIndex = (this.searchIndex + 1) % this.searchResults.length;
+    this.selectedIndex = this.searchResults[this.searchIndex];
   }
 
   onText(s: string | typeof BACKSPACE) {
@@ -33,6 +61,36 @@ export default class List {
       this.query = this.query.slice(0, this.query.length - 1);
     else
       this.query += s;
+
+    if (this.query.length > 0) {
+      this.searchResults = this.search();
+      // logToFile("search", this.searchResults);
+      if (this.searchResults.length > 0) {
+        // find next match after current selection
+        this.searchIndex = this.searchResults.findIndex(i => i >= this.selectedIndex);
+        if (this.searchIndex === -1)
+          this.searchIndex = this.searchResults.length - 1;
+
+        this.selectedIndex = this.searchResults[this.searchIndex];
+      } else {
+        this.searchIndex = null;
+      }
+    } else {
+      this.searchIndex = null;
+    }
+  }
+
+  search() {
+    const match = (line: string, query: string) => {
+      return line.toLowerCase().includes(query.toLowerCase());
+    };
+
+    return this.items.reduce((acc, line, index) => {
+      if (match(line, this.query)) {
+        acc.push(index);
+      }
+      return acc;
+    }, [] as number[]);
   }
 
   async render() {
@@ -54,8 +112,16 @@ export default class List {
 
   async display() {
     while (this.running) {
-      await this.render();
+      try {
+        await this.render();
+      } catch {
+        console.log();
+        return;
+      }
     }
+    const encoder = new TextEncoder();
+    const data = encoder.encode(this.items[this.selectedIndex]);
+    Deno.writeFileSync("/tmp/improved-history_command", data);
   }
 
   private hideCursor() {
@@ -67,7 +133,8 @@ export default class List {
   }
 
   private async renderList(list: ListItem[]) {
-    const lens: number[] = [];
+    let printedLines = 0;
+    const terminalWidth = Deno.consoleSize().columns;
     Deno.stdin.setRaw(true);
     const input = Deno.stdin;
     const output = Deno.stdout;
@@ -75,7 +142,7 @@ export default class List {
     this.hideCursor();
     for (const item of list) {
       const formattedItem = item.format();
-      lens.push(formattedItem.length + 1);
+      printedLines += Math.ceil(formattedItem.length / terminalWidth);
       await output.write(new TextEncoder().encode(formattedItem));
 
       if (item !== list[list.length - 1]) {
@@ -91,8 +158,12 @@ export default class List {
       return;
     }
 
-    const str = new TextDecoder().decode(data.slice(0, n));
+    // logToFile("input:", data.slice(0, n).map(x => x.toString(16)).join(","));
+    logToFile("input:", data.slice(0, n));
 
+    const str = new TextDecoder().decode(data.slice(0, n));
+    logToFile('len:', str.length)
+    logToFile('input:', str, '\n');
     switch (str) {
       case "\u0003": // ETX
       case "\u0004": // EOT
@@ -100,32 +171,49 @@ export default class List {
 
       case "\r": // CR
       case "\n": // LF
+      logToFile('enter!');
       this.onEnter();
       break;
 
-//      case "\u0020": // SPACE
-//      this.onSpace();
-//      break;
+      case "\u0012": // Crl-r
+      this.searchUp();
+      break;
+      case "\u0013": // Crl-s
+      this.searchDown();
+      break;
+
+      case "\u001bn":
+        this.onEnd();
+      break;
+
+      case "\u001bp":
+        this.onStart();
+      break;
 
       case "\u001b[A": // UP
+      case "\u001bOA":
+      case "\u0010":
       this.onUp();
       break;
 
       case "\u001b[B": // DOWN
+      case "\u001bOB":
+      case "\u000e":
       this.onDown();
       break;
+
       case "\u0008": // BACKSPACE
       case "\u007F": // BACKSPACE
       this.onText(BACKSPACE);
       break;
       default:
-      this.onText(str);
+        this.onText(str);
       break;
     }
 
     this.hideCursor();
     // clear list to rerender it
-    for (let i = lens.length - 1; i > 0; --i) {
+    while (--printedLines) {
       // go to beginning of line
       await output.write(new TextEncoder().encode("\r"));
       // clear line
