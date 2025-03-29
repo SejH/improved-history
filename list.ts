@@ -2,6 +2,8 @@ type ListItem = {
   format: () => string;
 };
 
+const BACKSPACE = null;
+
 export default class List {
   private selectedIndex = 0;
   private running = true;
@@ -26,12 +28,8 @@ export default class List {
     this.running = false;
   }
 
-  onSpace() {
-
-  }
-
-  onText(s: string | null) {
-    if (s === null)
+  onText(s: string | typeof BACKSPACE) {
+    if (s === BACKSPACE)
       this.query = this.query.slice(0, this.query.length - 1);
     else
       this.query += s;
@@ -96,9 +94,9 @@ export default class List {
       this.onEnter();
       break;
 
-      case "\u0020": // SPACE
-      this.onSpace();
-      break;
+//      case "\u0020": // SPACE
+//      this.onSpace();
+//      break;
 
       case "\u001b[A": // UP
       this.onUp();
@@ -109,7 +107,7 @@ export default class List {
       break;
       case "\u0008": // BACKSPACE
       case "\u007F": // BACKSPACE
-      this.onText(null);
+      this.onText(BACKSPACE);
       break;
       default:
       this.onText(str);
