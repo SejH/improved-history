@@ -9,7 +9,7 @@ function logToFile(...args: any[]) {
 }
 
 export default class List {
-  private displayRange: number = 20;
+  private displayRange: number = Math.floor(Deno.consoleSize().rows / 2);
   private selectedIndex = 0;
   private running = true;
   private listItems: ListItem[] = [];
