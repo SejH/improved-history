@@ -50,6 +50,7 @@ export default class List {
   private query = '';
   private searchResults: number[] = [];
   private searchIndex: number | null = null;
+  public result: string | null = null;
 
   constructor(private items: string[]) {
     this.selectedIndex = this.items.length - 1;
@@ -82,6 +83,7 @@ export default class List {
 
   onEnter() {
     this.running = false;
+    this.result = this.items[this.selectedIndex];
   }
 
   searchUp() {
@@ -156,9 +158,6 @@ export default class List {
         return;
       }
     }
-    const encoder = new TextEncoder();
-    const data = encoder.encode(this.items[this.selectedIndex]);
-    Deno.writeFileSync("/tmp/improved-history_command", data);
   }
 
   private hideCursor() {
