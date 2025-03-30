@@ -103,17 +103,13 @@ export default class List {
     else
       this.query += s;
 
-    if (this.query.length > 0) {
-      this.searchResults = this.search();
-      if (this.searchResults.length > 0) {
-        this.searchIndex = this.searchResults.findIndex(i => i >= this.selectedIndex);
-        if (this.searchIndex === -1)
-          this.searchIndex = this.searchResults.length - 1;
+    this.searchResults = this.search();
+    if (this.searchResults.length > 0) {
+      this.searchIndex = this.searchResults.findIndex(i => i >= this.selectedIndex);
+      if (this.searchIndex === -1)
+        this.searchIndex = this.searchResults.length - 1;
 
-        this.selectedIndex = this.searchResults[this.searchIndex];
-      } else {
-        this.searchIndex = null;
-      }
+      this.selectedIndex = this.searchResults[this.searchIndex];
     } else {
       this.searchIndex = null;
     }
@@ -123,6 +119,9 @@ export default class List {
     const match = (line: string, query: string) => {
       return line.toLowerCase().includes(query.toLowerCase());
     };
+
+    if (this.query.length === 0)
+      return [];
 
     return this.items.reduce((acc, line, index) => {
       if (match(line, this.query)) {
