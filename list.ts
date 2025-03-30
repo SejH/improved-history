@@ -44,11 +44,11 @@ function colorString(x: string, color: keyof typeof consoleColors) {
 
 export default class List {
   private displayRange: number = Math.floor(Deno.consoleSize().rows / 2);
-  private selectedIndex = 0;
+  public selectedIndex = 0;
   private running = true;
   private listItems: ListItem[] = [];
-  private query = '';
-  private searchResults: number[] = [];
+  public query = '';
+  public searchResults: number[] = [];
   private searchIndex: number | null = null;
   public result: string | null = null;
 
@@ -75,10 +75,12 @@ export default class List {
 
   onStart() {
     this.selectedIndex = 0;
+    this.searchIndex = 0;
   }
 
   onEnd() {
     this.selectedIndex = this.listItems.length - 1;
+    this.searchIndex = this.searchResults.length;
   }
 
   onEnter() {
@@ -89,14 +91,25 @@ export default class List {
   searchUp() {
     if (this.searchIndex === null)
       return;
-    this.searchIndex = (this.searchIndex - 1 + this.searchResults.length) % this.searchResults.length;
-    this.selectedIndex = this.searchResults[this.searchIndex];
+
+    // Find previous search result relative to selectedIndex
+    this.selectedIndex = this.searchResults
+      .reduce((acc, resultIndex, i) => {
+        const nextResultIsAfterCurrent = (
+          this.searchResults[i + 1] >= this.selectedIndex ||
+          i === this.searchResults.length - 1
+        );
+        if (resultIndex < this.selectedIndex && nextResultIsAfterCurrent)
+          return resultIndex;
+        return acc;
+    }, this.selectedIndex);
   }
   searchDown() {
     if (this.searchIndex === null)
       return;
-    this.searchIndex = (this.searchIndex + 1) % this.searchResults.length;
-    this.selectedIndex = this.searchResults[this.searchIndex];
+
+    this.selectedIndex = this.searchResults
+      .find(resultIndex => resultIndex > this.selectedIndex) || this.selectedIndex;
   }
 
   onText(s: string | typeof BACKSPACE) {
