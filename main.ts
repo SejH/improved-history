@@ -9,7 +9,7 @@ if (!commandFile || !historyFile) {
 const historyText = await Deno.readTextFile(historyFile);
 const inputList = historyText.split("\n")
   .filter((l) => !!l)
-  .map((l) => (l.match(/^[^;]+;(.+)$/)?.[1] || ""));
+  .map((l) => (l.match(/^[^;]+;(.+)$/)?.[1] || l));
 
 const list = new List(inputList);
 await list.display();
