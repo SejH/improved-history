@@ -35,7 +35,7 @@ const consoleColors = {
   BgMagenta: "\x1b[45m",
   BgCyan: "\x1b[46m",
   BgWhite: "\x1b[47m",
-  BgGray: "\x1b[100m"
+  BgGray: "\x1b[100m",
 };
 
 function colorString(x: string, color: keyof typeof consoleColors) {
@@ -47,7 +47,7 @@ export default class List {
   public selectedIndex = 0;
   private running = true;
   private listItems: ListItem[] = [];
-  public query = '';
+  public query = "";
   public searchResults: number[] = [];
   public result: string | null = null;
 
@@ -55,17 +55,20 @@ export default class List {
     this.selectedIndex = this.items.length - 1;
     this.listItems = this.items.map((x, i) => ({
       format: () => {
-        if (this.selectedIndex === i)
-          return colorString(`> ${x}`, 'FgCyan');
-        if (this.searchResults.includes(i))
-          return colorString(`  ${x}`, 'FgGreen');
+        if (this.selectedIndex === i) {
+          return colorString(`> ${x}`, "FgCyan");
+        }
+        if (this.searchResults.includes(i)) {
+          return colorString(`  ${x}`, "FgGreen");
+        }
         return `  ${x}`;
-      }
+      },
     }));
   }
 
   onUp() {
-    this.selectedIndex = (this.selectedIndex - 1 + this.listItems.length) % this.listItems.length;
+    this.selectedIndex = (this.selectedIndex - 1 + this.listItems.length) %
+      this.listItems.length;
   }
 
   onDown() {
@@ -86,36 +89,43 @@ export default class List {
   }
 
   onClear() {
-    this.query = '';
+    this.query = "";
     this.searchResults = [];
   }
 
   searchUp() {
     // Find previous search result relative to selectedIndex
-    const index = this.searchResults.findIndex(resultIndex => resultIndex >= this.selectedIndex);
-    if (index === 0 || index === -1)
+    const index = this.searchResults.findIndex((resultIndex) =>
+      resultIndex >= this.selectedIndex
+    );
+    if (index === 0 || index === -1) {
       return;
+    }
     this.selectedIndex = this.searchResults[index - 1];
   }
 
   searchDown() {
     // Find next search result relative to selectedIndex
     this.selectedIndex = this.searchResults
-      .find(resultIndex => resultIndex > this.selectedIndex) || this.selectedIndex;
+      .find((resultIndex) => resultIndex > this.selectedIndex) ||
+      this.selectedIndex;
   }
 
   onText(s: string | typeof BACKSPACE) {
-    if (s === BACKSPACE)
+    if (s === BACKSPACE) {
       this.query = this.query.slice(0, this.query.length - 1);
-    else
+    } else {
       this.query += s;
+    }
 
     this.searchResults = this.search();
-    if (this.searchResults.length === 0)
+    if (this.searchResults.length === 0) {
       return;
+    }
 
     this.selectedIndex = this.searchResults
-      .find(resultIndex => resultIndex >= this.selectedIndex) || this.searchResults[this.searchResults.length - 1];
+      .find((resultIndex) => resultIndex >= this.selectedIndex) ||
+      this.searchResults[this.searchResults.length - 1];
   }
 
   search() {
@@ -123,8 +133,9 @@ export default class List {
       return line.toLowerCase().includes(query.toLowerCase());
     };
 
-    if (this.query.length === 0)
+    if (this.query.length === 0) {
       return [];
+    }
 
     return this.items.reduce((acc, line, index) => {
       if (match(line, this.query)) {
@@ -200,51 +211,51 @@ export default class List {
     switch (str) {
       case "\u0003": // ETX
       case "\u0004": // EOT
-      throw new Error("Terminated by user.");
+        throw new Error("Terminated by user.");
 
       case "\r": // CR
       case "\n": // LF
-      this.onEnter();
-      break;
+        this.onEnter();
+        break;
 
       case "\u0012": // Crl-r
-      this.searchUp();
-      break;
+        this.searchUp();
+        break;
       case "\u0013": // Crl-s
-      this.searchDown();
-      break;
+        this.searchDown();
+        break;
 
       case "\u001bn": // M-n
         this.onEnd();
-      break;
+        break;
 
       case "\u001bp": // M-p
         this.onStart();
-      break;
+        break;
 
       case "\u001b[A": // UP
       case "\u001bOA": // UP
       case "\u0010": // Crl-p
         this.onUp();
-      break;
+        break;
 
       case "\u001b[B": // DOWN
       case "\u001bOB": // DOWN
       case "\u000e": // Crl-n
-      this.onDown();
-      break;
+        this.onDown();
+        break;
 
       case "\u000B":
         this.onClear();
-      break;
+        break;
 
       case "\u0008": // BACKSPACE
       case "\u007F": // BACKSPACE
         this.onText(BACKSPACE);
-      break;
+        break;
       default:
         this.onText(str);
-      break;
+        break;
     }
 
     this.hideCursor();

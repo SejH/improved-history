@@ -1,5 +1,6 @@
 Add the following to your .zshrc to bind the improved-history command to Ctrl+R:
-``` zsh
+
+```zsh
 function improved-history() {
     zle -I
     command_file=$(mktemp)
