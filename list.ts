@@ -49,7 +49,6 @@ export default class List {
   private listItems: ListItem[] = [];
   public query = '';
   public searchResults: number[] = [];
-  private searchIndex: number | null = null;
   public result: string | null = null;
 
   constructor(private items: string[]) {
@@ -75,12 +74,10 @@ export default class List {
 
   onStart() {
     this.selectedIndex = 0;
-    this.searchIndex = 0;
   }
 
   onEnd() {
     this.selectedIndex = this.listItems.length - 1;
-    this.searchIndex = this.searchResults.length;
   }
 
   onEnter() {
@@ -89,25 +86,15 @@ export default class List {
   }
 
   searchUp() {
-    if (this.searchIndex === null)
-      return;
-
     // Find previous search result relative to selectedIndex
-    this.selectedIndex = this.searchResults
-      .reduce((acc, resultIndex, i) => {
-        const nextResultIsAfterCurrent = (
-          this.searchResults[i + 1] >= this.selectedIndex ||
-          i === this.searchResults.length - 1
-        );
-        if (resultIndex < this.selectedIndex && nextResultIsAfterCurrent)
-          return resultIndex;
-        return acc;
-    }, this.selectedIndex);
+    const index = this.searchResults.findIndex(resultIndex => resultIndex >= this.selectedIndex);
+    if (index === 0 || index === -1)
+       return;
+    this.selectedIndex = this.searchResults[index - 1];
   }
-  searchDown() {
-    if (this.searchIndex === null)
-      return;
 
+  searchDown() {
+    // Find next search result relative to selectedIndex
     this.selectedIndex = this.searchResults
       .find(resultIndex => resultIndex > this.selectedIndex) || this.selectedIndex;
   }
@@ -119,15 +106,11 @@ export default class List {
       this.query += s;
 
     this.searchResults = this.search();
-    if (this.searchResults.length > 0) {
-      this.searchIndex = this.searchResults.findIndex(i => i >= this.selectedIndex);
-      if (this.searchIndex === -1)
-        this.searchIndex = this.searchResults.length - 1;
+    if (this.searchResults.length === 0)
+      return;
 
-      this.selectedIndex = this.searchResults[this.searchIndex];
-    } else {
-      this.searchIndex = null;
-    }
+    this.selectedIndex = this.searchResults
+      .find(resultIndex => resultIndex >= this.selectedIndex) || this.searchResults[this.searchResults.length - 1];
   }
 
   search() {
