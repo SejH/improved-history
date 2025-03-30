@@ -98,7 +98,11 @@ export default class List {
     const index = this.searchResults.findIndex((resultIndex) =>
       resultIndex >= this.selectedIndex
     );
-    if (index === 0 || index === -1) {
+    if (index === -1 && this.searchResults.length > 0) {
+      this.selectedIndex = this.searchResults[this.searchResults.length - 1];
+      return;
+    }
+    if (index === 0) {
       return;
     }
     this.selectedIndex = this.searchResults[index - 1];
