@@ -89,6 +89,8 @@ export default class List {
   }
 
   onClear() {
+    if (this.query === "") // Quick way to exit the program Crl-k Crl-k
+      throw new Error("Terminated by user");
     this.query = "";
     this.searchResults = [];
   }
