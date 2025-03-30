@@ -85,11 +85,16 @@ export default class List {
     this.result = this.items[this.selectedIndex];
   }
 
+  onClear() {
+    this.query = '';
+    this.searchResults = [];
+  }
+
   searchUp() {
     // Find previous search result relative to selectedIndex
     const index = this.searchResults.findIndex(resultIndex => resultIndex >= this.selectedIndex);
     if (index === 0 || index === -1)
-       return;
+      return;
     this.selectedIndex = this.searchResults[index - 1];
   }
 
@@ -220,7 +225,7 @@ export default class List {
       case "\u001b[A": // UP
       case "\u001bOA": // UP
       case "\u0010": // Crl-p
-      this.onUp();
+        this.onUp();
       break;
 
       case "\u001b[B": // DOWN
@@ -229,9 +234,13 @@ export default class List {
       this.onDown();
       break;
 
+      case "\u000B":
+        this.onClear();
+      break;
+
       case "\u0008": // BACKSPACE
       case "\u007F": // BACKSPACE
-      this.onText(BACKSPACE);
+        this.onText(BACKSPACE);
       break;
       default:
         this.onText(str);
