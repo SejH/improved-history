@@ -88,9 +88,14 @@ export default class List {
     this.result = this.items[this.selectedIndex];
   }
 
+  exit() {
+    this.running = false;
+    this.result = "";
+  }
+
   onClear() {
     if (this.query === "") // Quick way to exit the program Crl-k Crl-k
-      throw new Error("Terminated by user");
+      this.exit();
     this.query = "";
     this.searchResults = [];
   }
@@ -219,7 +224,8 @@ export default class List {
     switch (str) {
       case "\u0003": // ETX
       case "\u0004": // EOT
-        throw new Error("Terminated by user.");
+        this.exit();
+        break;
 
       case "\r": // CR
       case "\n": // LF
