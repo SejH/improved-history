@@ -136,7 +136,9 @@ export default class List {
 
   search() {
     const match = (line: string, query: string) => {
-      return line.toLowerCase().includes(query.toLowerCase());
+      return query.split(" ").every((word) =>
+        line.toLowerCase().includes(word.toLowerCase())
+      );
     };
 
     if (this.query.length === 0) {
