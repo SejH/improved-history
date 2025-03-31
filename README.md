@@ -3,7 +3,7 @@ Compile using `deno run compile`; this will output the binary `improved-history`
 Add the following to your .zshrc to bind `improved-history` to Ctrl+R:
 
 ```zsh
-function improved-history() {
+function _improved-history() {
     zle -I
     command_file=$(mktemp)
     history_file="$HOME/.zsh_history"
@@ -12,6 +12,6 @@ function improved-history() {
     # cleanup
     rm $command_file
 }
-zle -N improved-history
-bindkey '^r' improved-history
+zle -N _improved-history
+bindkey '^r' _improved-history
 ```
