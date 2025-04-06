@@ -1,6 +1,4 @@
-type ListItem = {
-  format: () => string;
-};
+import { ListItem, renderList, InputHandlers, DefaultInputHandler } from "./renderList.ts";
 
 const BACKSPACE = null;
 
@@ -180,120 +178,44 @@ export default class List {
 
     const list = this.listItems.slice(start, end);
     list.push({ format: () => `Search: ${this.query}` });
-    await this.renderList(list);
+    await renderList(list, {
+      handlers: this.inputHandlers,
+      defaultHandler: (str) => this.onText(str)
+    });
   }
+
+  private inputHandlers: InputHandlers = {
+    "\u0003": this.exit.bind(this), // ETX
+    "\u0004": this.exit.bind(this), // EOT
+
+    "\r": this.onEnter.bind(this), // CR
+    "\n": this.onEnter.bind(this), // LF
+
+    "\u0012": this.searchUp.bind(this), // Crl-r
+
+    "\u0013": this.searchDown.bind(this), // Crl-s
+
+    "\u001bp": this.onStart.bind(this), // M-p
+
+    "\u001bn": this.onEnd.bind(this), // M-n
+
+    "\u001b[A": this.onUp.bind(this), // UP
+    "\u001bOA": this.onUp.bind(this), // UP
+    "\u0010"  : this.onUp.bind(this), // Crl-p
+
+    "\u001b[B": this.onDown.bind(this), // DOWN
+    "\u001bOB": this.onDown.bind(this), // DOWN
+    "\u000e"  : this.onDown.bind(this), // Crl-n
+
+    "\u000B": this.onClear.bind(this), // Crl-k
+
+    "\u0008" : this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u007F" : this.onText.bind(this, BACKSPACE), // BACKSPACE
+  };
 
   async display() {
     while (this.running) {
-      try {
-        await this.render();
-      } catch {
-        console.log();
-        return;
-      }
+      await this.render();
     }
-  }
-
-  private hideCursor() {
-    Deno.stdout.write(new TextEncoder().encode("\u001B[?25l"));
-  }
-
-  private showCursor() {
-    Deno.stdout.write(new TextEncoder().encode("\u001B[?25h"));
-  }
-
-  private async renderList(list: ListItem[]) {
-    let printedLines = 0;
-    const terminalWidth = Deno.consoleSize().columns;
-    Deno.stdin.setRaw(true);
-    const input = Deno.stdin;
-    const output = Deno.stdout;
-
-    this.hideCursor();
-    for (const item of list) {
-      const formattedItem = item.format();
-      printedLines += Math.ceil(formattedItem.length / terminalWidth);
-      await output.write(new TextEncoder().encode(formattedItem));
-
-      if (item !== list[list.length - 1]) {
-        await output.write(new TextEncoder().encode("\n"));
-      }
-    }
-    this.showCursor();
-
-    const data = new Uint8Array(3);
-    const n = await input.read(data);
-
-    if (!n) {
-      return;
-    }
-
-    const str = new TextDecoder().decode(data.slice(0, n));
-
-    switch (str) {
-      case "\u0003": // ETX
-      case "\u0004": // EOT
-        this.exit();
-        break;
-
-      case "\r": // CR
-      case "\n": // LF
-        this.onEnter();
-        break;
-
-      case "\u0012": // Crl-r
-        this.searchUp();
-        break;
-      case "\u0013": // Crl-s
-        this.searchDown();
-        break;
-
-      case "\u001bn": // M-n
-        this.onEnd();
-        break;
-
-      case "\u001bp": // M-p
-        this.onStart();
-        break;
-
-      case "\u001b[A": // UP
-      case "\u001bOA": // UP
-      case "\u0010": // Crl-p
-        this.onUp();
-        break;
-
-      case "\u001b[B": // DOWN
-      case "\u001bOB": // DOWN
-      case "\u000e": // Crl-n
-        this.onDown();
-        break;
-
-      case "\u000B":
-        this.onClear();
-        break;
-
-      case "\u0008": // BACKSPACE
-      case "\u007F": // BACKSPACE
-        this.onText(BACKSPACE);
-        break;
-      default:
-        this.onText(str);
-        break;
-    }
-
-    this.hideCursor();
-    // clear list to rerender it
-    while (--printedLines) {
-      // go to beginning of line
-      await output.write(new TextEncoder().encode("\r"));
-      // clear line
-      await output.write(new TextEncoder().encode("\x1b[K"));
-      // go up
-      await output.write(new TextEncoder().encode("\x1b[A"));
-    }
-    // clear the first line
-    await output.write(new TextEncoder().encode("\x1b[K"));
-    this.showCursor();
-    Deno.stdin.setRaw(false);
   }
 }
