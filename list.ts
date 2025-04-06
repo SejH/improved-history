@@ -45,6 +45,7 @@ function colorString(x: string, color: keyof typeof consoleColors) {
 export default class List {
   private displayRange: number = Math.floor(Deno.consoleSize().rows / 4);
   public selectedIndex = 0;
+  private savedIndex: number | null = null;
   private running = true;
   private listItems: ListItem[] = [];
   public query = "";
@@ -67,11 +68,13 @@ export default class List {
   }
 
   onUp() {
+    this.savedIndex = null;
     this.selectedIndex = (this.selectedIndex - 1 + this.listItems.length) %
       this.listItems.length;
   }
 
   onDown() {
+    this.savedIndex = null;
     this.selectedIndex = (this.selectedIndex + 1) % this.listItems.length;
   }
 
@@ -97,6 +100,9 @@ export default class List {
     if (this.query === "") // Quick way to exit the program Crl-k Crl-k
       this.exit();
     this.query = "";
+    if (this.savedIndex !== null)
+      this.selectedIndex = this.savedIndex;
+    this.savedIndex = null;
     this.searchResults = [];
   }
 
@@ -105,7 +111,8 @@ export default class List {
     const index = this.searchResults.findIndex((resultIndex) =>
       resultIndex >= this.selectedIndex
     );
-    if (index === -1 && this.searchResults.length > 0) {
+    if (index === -1) {
+      if (this.searchResults.length > 0)
       this.selectedIndex = this.searchResults[this.searchResults.length - 1];
       return;
     }
@@ -126,6 +133,8 @@ export default class List {
     if (s === BACKSPACE) {
       this.query = this.query.slice(0, this.query.length - 1);
     } else {
+      if (this.query === "")
+        this.savedIndex = this.selectedIndex;
       this.query += s;
     }
 
