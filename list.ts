@@ -43,7 +43,7 @@ function colorString(x: string, color: keyof typeof consoleColors) {
 }
 
 export default class List {
-  private displayRange: number = Math.floor(Deno.consoleSize().rows / 2);
+  private displayRange: number = Math.floor(Deno.consoleSize().rows / 4);
   public selectedIndex = 0;
   private running = true;
   private listItems: ListItem[] = [];
