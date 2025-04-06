@@ -136,6 +136,31 @@ export default class List {
     }, [] as number[]);
   }
 
+  compactMode() {
+    if (this.searchResults.length === 0) {
+      return;
+    }
+
+    this.items = [
+      ...new Set(this.searchResults.map(i => this.items[i]))
+    ];
+    this.listItems = this.items.map((x, i) => ({
+      format: () => {
+        if (this.selectedIndex === i) {
+          return color(`> ${x}`, "FgCyan");
+        }
+        if (this.searchResults.includes(i)) {
+          return color(`  ${x}`, "FgGreen");
+        }
+        return `  ${x}`;
+      },
+    }));
+    this.searchResults = [];
+    this.query = "";
+    this.savedIndex = null;
+    this.selectedIndex = this.items.length - 1;
+  }
+
   async render() {
     let start = this.selectedIndex - this.displayRange / 2;
     let end = this.selectedIndex + this.displayRange / 2;
@@ -180,8 +205,10 @@ export default class List {
 
     "\u000B": this.onClear.bind(this), // Crl-k
 
-    "\u0008": this.onText.bind(this, BACKSPACE), // BACKSPACE
-    "\u007F": this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u0015": this.compactMode.bind(this), // Crl-u
+
+    "\u0008" : this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u007F" : this.onText.bind(this, BACKSPACE), // BACKSPACE
   };
 
   async display() {
