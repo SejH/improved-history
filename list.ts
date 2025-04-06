@@ -1,4 +1,5 @@
-import { ListItem, renderList, InputHandlers, DefaultInputHandler } from "./renderList.ts";
+import { ListItem, renderList, InputHandlers } from "./renderList.ts";
+import color from "./color.ts";
 
 const BACKSPACE = null;
 
@@ -6,39 +7,6 @@ function logToFile(...args: any[]) {
   // Deno.writeTextFile("./list.log", args.join(" ") + "\n", { append: true });
 }
 
-const consoleColors = {
-  Reset: "\x1b[0m",
-  Bright: "\x1b[1m",
-  Dim: "\x1b[2m",
-  Underscore: "\x1b[4m",
-  Blink: "\x1b[5m",
-  Reverse: "\x1b[7m",
-  Hidden: "\x1b[8m",
-
-  FgBlack: "\x1b[30m",
-  FgRed: "\x1b[31m",
-  FgGreen: "\x1b[32m",
-  FgYellow: "\x1b[33m",
-  FgBlue: "\x1b[34m",
-  FgMagenta: "\x1b[35m",
-  FgCyan: "\x1b[36m",
-  FgWhite: "\x1b[37m",
-  FgGray: "\x1b[90m",
-
-  BgBlack: "\x1b[40m",
-  BgRed: "\x1b[41m",
-  BgGreen: "\x1b[42m",
-  BgYellow: "\x1b[43m",
-  BgBlue: "\x1b[44m",
-  BgMagenta: "\x1b[45m",
-  BgCyan: "\x1b[46m",
-  BgWhite: "\x1b[47m",
-  BgGray: "\x1b[100m",
-};
-
-function colorString(x: string, color: keyof typeof consoleColors) {
-  return `${consoleColors[color]}${x}${consoleColors.Reset}`;
-}
 
 export default class List {
   private displayRange: number = Math.floor(Deno.consoleSize().rows / 4);
@@ -55,10 +23,10 @@ export default class List {
     this.listItems = this.items.map((x, i) => ({
       format: () => {
         if (this.selectedIndex === i) {
-          return colorString(`> ${x}`, "FgCyan");
+          return color(`> ${x}`, "FgCyan");
         }
         if (this.searchResults.includes(i)) {
-          return colorString(`  ${x}`, "FgGreen");
+          return color(`  ${x}`, "FgGreen");
         }
         return `  ${x}`;
       },
