@@ -1,4 +1,4 @@
-import { ListItem, renderList, InputHandlers } from "./renderList.ts";
+import { InputHandlers, ListItem, renderList } from "./renderList.ts";
 import color from "./color.ts";
 
 const BACKSPACE = null;
@@ -6,7 +6,6 @@ const BACKSPACE = null;
 function logToFile(...args: any[]) {
   // Deno.writeTextFile("./list.log", args.join(" ") + "\n", { append: true });
 }
-
 
 export default class List {
   private displayRange: number = Math.floor(Deno.consoleSize().rows / 4);
@@ -63,11 +62,13 @@ export default class List {
   }
 
   onClear() {
-    if (this.query === "") // Quick way to exit the program Crl-k Crl-k
+    if (this.query === "") { // Quick way to exit the program Crl-k Crl-k
       this.exit();
+    }
     this.query = "";
-    if (this.savedIndex !== null)
+    if (this.savedIndex !== null) {
       this.selectedIndex = this.savedIndex;
+    }
     this.savedIndex = null;
     this.searchResults = [];
   }
@@ -78,8 +79,9 @@ export default class List {
       resultIndex >= this.selectedIndex
     );
     if (index === -1) {
-      if (this.searchResults.length > 0)
-      this.selectedIndex = this.searchResults[this.searchResults.length - 1];
+      if (this.searchResults.length > 0) {
+        this.selectedIndex = this.searchResults[this.searchResults.length - 1];
+      }
       return;
     }
     if (index === 0) {
@@ -99,8 +101,9 @@ export default class List {
     if (s === BACKSPACE) {
       this.query = this.query.slice(0, this.query.length - 1);
     } else {
-      if (this.query === "")
+      if (this.query === "") {
         this.savedIndex = this.selectedIndex;
+      }
       this.query += s;
     }
 
@@ -148,7 +151,7 @@ export default class List {
     list.push({ format: () => `Search: ${this.query}` });
     await renderList(list, {
       handlers: this.inputHandlers,
-      defaultHandler: (str) => this.onText(str)
+      defaultHandler: (str) => this.onText(str),
     });
   }
 
@@ -169,16 +172,16 @@ export default class List {
 
     "\u001b[A": this.onUp.bind(this), // UP
     "\u001bOA": this.onUp.bind(this), // UP
-    "\u0010"  : this.onUp.bind(this), // Crl-p
+    "\u0010": this.onUp.bind(this), // Crl-p
 
     "\u001b[B": this.onDown.bind(this), // DOWN
     "\u001bOB": this.onDown.bind(this), // DOWN
-    "\u000e"  : this.onDown.bind(this), // Crl-n
+    "\u000e": this.onDown.bind(this), // Crl-n
 
     "\u000B": this.onClear.bind(this), // Crl-k
 
-    "\u0008" : this.onText.bind(this, BACKSPACE), // BACKSPACE
-    "\u007F" : this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u0008": this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u007F": this.onText.bind(this, BACKSPACE), // BACKSPACE
   };
 
   async display() {

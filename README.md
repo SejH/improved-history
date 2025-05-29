@@ -1,4 +1,5 @@
-Compile using `deno run compile`; this will output the binary `improved-history`.
+Compile using `deno run compile`; this will output the binary
+`improved-history`.
 
 Add the following to your .zshrc to bind `improved-history` to Ctrl+R:
 
