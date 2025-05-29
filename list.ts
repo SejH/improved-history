@@ -25,7 +25,7 @@ export default class List {
   private generateListItems() {
     this.listItems = this.items.map((x, i) => ({
       format: () => {
-        const numLen = (n) => {
+        const numLen = (n: number) => {
           return n.toString().length;
         };
         const paddingLength = numLen(this.items.length);
