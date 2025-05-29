@@ -19,15 +19,26 @@ export default class List {
 
   constructor(private items: string[]) {
     this.selectedIndex = this.items.length - 1;
+    this.generateListItems();
+  }
+
+  private generateListItems() {
     this.listItems = this.items.map((x, i) => ({
       format: () => {
+        const numLen = (n) => {
+          return n.toString().length;
+        };
+        const paddingLength = numLen(this.items.length);
+        const padding = (reduce = 0) => {
+          return " ".repeat(paddingLength - reduce);
+        };
         if (this.selectedIndex === i) {
-          return color(`> ${x}`, "FgCyan");
+          return color(`${padding(1)}> ${x}`, "FgCyan");
         }
         if (this.searchResults.includes(i)) {
-          return color(`  ${x}`, "FgGreen");
+          return color(`${i}${padding(numLen(i))} ${x}`, "FgGreen");
         }
-        return `  ${x}`;
+        return `${i}${padding(numLen(i))} ${x}`;
       },
     }));
   }
@@ -142,19 +153,9 @@ export default class List {
     }
 
     this.items = [
-      ...new Set(this.searchResults.map(i => this.items[i]))
+      ...new Set(this.searchResults.map((i) => this.items[i])),
     ];
-    this.listItems = this.items.map((x, i) => ({
-      format: () => {
-        if (this.selectedIndex === i) {
-          return color(`> ${x}`, "FgCyan");
-        }
-        if (this.searchResults.includes(i)) {
-          return color(`  ${x}`, "FgGreen");
-        }
-        return `  ${x}`;
-      },
-    }));
+    this.generateListItems();
     this.searchResults = [];
     this.query = "";
     this.savedIndex = null;
