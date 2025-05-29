@@ -1,4 +1,3 @@
-
 const consoleColors = {
   Reset: "\x1b[0m",
   Bright: "\x1b[1m",
@@ -28,7 +27,6 @@ const consoleColors = {
   BgWhite: "\x1b[47m",
   BgGray: "\x1b[100m",
 };
-
 
 export default function color(str: string, color: keyof typeof consoleColors) {
   return `${consoleColors[color]}${str}${consoleColors.Reset}`;
