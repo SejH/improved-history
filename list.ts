@@ -16,6 +16,10 @@ export default class List {
   public query = "";
   public searchResults: number[] = [];
   public result: string | null = null;
+  private rendering: Promise<void> | null = null;
+  public onCompact: (compact: string[]) => void = () => {};
+  public onUnCompact: () => void = () => {};
+  public onResult: (result: string | null) => void = () => {};
 
   constructor(private items: string[]) {
     this.selectedIndex = this.items.length - 1;
@@ -65,11 +69,13 @@ export default class List {
   onEnter() {
     this.running = false;
     this.result = this.items[this.selectedIndex];
+    this.onResult(this.result);
   }
 
-  exit() {
+  async exit() {
     this.running = false;
     this.result = "";
+    await this.rendering;
   }
 
   onClear() {
@@ -152,14 +158,21 @@ export default class List {
       return;
     }
 
-    this.items = [
+    const compact = [
       ...new Set(this.searchResults.map((i) => this.items[i])),
     ];
+    this.onCompact(compact);
+    /*
     this.generateListItems();
     this.searchResults = [];
     this.query = "";
     this.savedIndex = null;
     this.selectedIndex = this.items.length - 1;
+    */
+  }
+
+  unCompact() {
+    this.onUnCompact();
   }
 
   async render() {
@@ -207,6 +220,7 @@ export default class List {
     "\u000B": this.onClear.bind(this), // Crl-k
 
     "\u0015": this.compactMode.bind(this), // Crl-u
+    "\u0009": this.unCompact.bind(this), // Crl-i
 
     "\u0008" : this.onText.bind(this, BACKSPACE), // BACKSPACE
     "\u007F" : this.onText.bind(this, BACKSPACE), // BACKSPACE
@@ -214,7 +228,8 @@ export default class List {
 
   async display() {
     while (this.running) {
-      await this.render();
+      this.rendering = this.render();
+      await this.rendering;
     }
   }
 }
