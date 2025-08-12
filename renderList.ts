@@ -39,7 +39,12 @@ export async function renderList(
   hideCursor();
   for (const item of list) {
     const formattedItem = item.format();
-    printedLines += Math.ceil(formattedItem.length / terminalWidth);
+
+    // Hack to get the length of the displayed characters
+    const displayedLength = formattedItem.endsWith("\x1b[0m")
+      ? formattedItem.length - 9
+      : formattedItem.length;
+    printedLines += Math.ceil(displayedLength / terminalWidth);
     await output.write(new TextEncoder().encode(formattedItem));
 
     if (item !== list[list.length - 1]) {
