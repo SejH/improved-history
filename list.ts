@@ -175,7 +175,11 @@ export default class List {
       start = 0;
       end = this.displayRange;
     } else if (end > this.listItems.length - 1) {
-      start = this.listItems.length - this.displayRange;
+      end = this.listItems.length;
+      start = end - this.displayRange;
+    }
+    if (this.listItems.length <= this.displayRange) {
+      start = 0;
       end = this.listItems.length;
     }
 
