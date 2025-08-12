@@ -55,13 +55,6 @@ export async function renderList(
     return;
   }
 
-  const str = new TextDecoder().decode(data.slice(0, n));
-  if (handlers[str]) {
-    handlers[str]();
-  } else {
-    defaultHandler(str);
-  }
-
   hideCursor();
   // clear list to rerender it
   while (--printedLines) {
@@ -76,4 +69,11 @@ export async function renderList(
   await output.write(new TextEncoder().encode("\x1b[K"));
   showCursor();
   input.setRaw(false);
+
+  const str = new TextDecoder().decode(data.slice(0, n));
+  if (handlers[str]) {
+    handlers[str]();
+  } else {
+    defaultHandler(str);
+  }
 }
