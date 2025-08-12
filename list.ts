@@ -162,13 +162,6 @@ export default class List {
       ...new Set(this.searchResults.map((i) => this.items[i])),
     ];
     this.onCompact(compact);
-    /*
-    this.generateListItems();
-    this.searchResults = [];
-    this.query = "";
-    this.savedIndex = null;
-    this.selectedIndex = this.items.length - 1;
-    */
   }
 
   unCompact() {
