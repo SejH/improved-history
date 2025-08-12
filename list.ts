@@ -16,18 +16,33 @@ export default class List {
   public query = "";
   public searchResults: number[] = [];
   public result: string | null = null;
+  private rendering: Promise<void> | null = null;
+  public onCompact: (compact: string[]) => void = () => {};
+  public onUnCompact: () => void = () => {};
+  public onResult: (result: string | null) => void = () => {};
 
   constructor(private items: string[]) {
     this.selectedIndex = this.items.length - 1;
+    this.generateListItems();
+  }
+
+  private generateListItems() {
     this.listItems = this.items.map((x, i) => ({
       format: () => {
+        const numLen = (n: number) => {
+          return n.toString().length;
+        };
+        const paddingLength = numLen(this.items.length);
+        const padding = (reduce = 0) => {
+          return " ".repeat(paddingLength - reduce);
+        };
         if (this.selectedIndex === i) {
-          return color(`> ${x}`, "FgCyan");
+          return color(`${padding(1)}> ${x}`, "FgCyan");
         }
         if (this.searchResults.includes(i)) {
-          return color(`  ${x}`, "FgGreen");
+          return color(`${i}${padding(numLen(i))} ${x}`, "FgGreen");
         }
-        return `  ${x}`;
+        return `${i}${padding(numLen(i))} ${x}`;
       },
     }));
   }
@@ -54,11 +69,13 @@ export default class List {
   onEnter() {
     this.running = false;
     this.result = this.items[this.selectedIndex];
+    this.onResult(this.result);
   }
 
-  exit() {
+  async exit() {
     this.running = false;
     this.result = "";
+    await this.rendering;
   }
 
   onClear() {
@@ -136,6 +153,21 @@ export default class List {
     }, [] as number[]);
   }
 
+  compactMode() {
+    if (this.searchResults.length === 0) {
+      return;
+    }
+
+    const compact = [
+      ...new Set(this.searchResults.map((i) => this.items[i])),
+    ];
+    this.onCompact(compact);
+  }
+
+  unCompact() {
+    this.onUnCompact();
+  }
+
   async render() {
     let start = this.selectedIndex - this.displayRange / 2;
     let end = this.selectedIndex + this.displayRange / 2;
@@ -143,7 +175,11 @@ export default class List {
       start = 0;
       end = this.displayRange;
     } else if (end > this.listItems.length - 1) {
-      start = this.listItems.length - this.displayRange;
+      end = this.listItems.length;
+      start = end - this.displayRange;
+    }
+    if (this.listItems.length <= this.displayRange) {
+      start = 0;
       end = this.listItems.length;
     }
 
@@ -180,13 +216,17 @@ export default class List {
 
     "\u000B": this.onClear.bind(this), // Crl-k
 
-    "\u0008": this.onText.bind(this, BACKSPACE), // BACKSPACE
-    "\u007F": this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u0015": this.compactMode.bind(this), // Crl-u
+    "\u0009": this.unCompact.bind(this), // Crl-i
+
+    "\u0008" : this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u007F" : this.onText.bind(this, BACKSPACE), // BACKSPACE
   };
 
   async display() {
     while (this.running) {
-      await this.render();
+      this.rendering = this.render();
+      await this.rendering;
     }
   }
 }

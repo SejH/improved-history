@@ -11,12 +11,38 @@ const inputList = historyText.split("\n")
   .filter((l) => !!l)
   .map((l) => (l.match(/^[^;]+;(.+)$/)?.[1] || l));
 
-const list = new List(inputList);
-await list.display();
+const inputListHistory: string[][] = [];
 
-// write command to commandFile to be read by shell
-if (list.result) {
-  const encoder = new TextEncoder();
-  const data = encoder.encode(list.result);
-  Deno.writeFileSync(commandFile, data);
+let list: List | null = null;
+const createList = async (items: string[]) => {
+  await list?.exit();
+  // await new Promise(resolve => setTimeout(resolve, 1000));
+  list = new List(items);
+  list.onCompact = (compact) => {
+    inputListHistory.push(items);
+    createList(compact);
+  };
+
+  list.onUnCompact = () => {
+    const prevList = inputListHistory.pop();
+    if (!prevList) {
+      return;
+    }
+    createList(prevList);
+  };
+
+  list.onResult = (result) => {
+    if (!result) {
+      return;
+    }
+    // write command to commandFile to be read by shell
+    const encoder = new TextEncoder();
+    const data = encoder.encode(result);
+    Deno.writeFileSync(commandFile, data);
+    Deno.exit(0);
+  }
+
+  list.display();
 }
+
+createList(inputList);
