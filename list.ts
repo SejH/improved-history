@@ -8,7 +8,7 @@ function logToFile(...args: any[]) {
 }
 
 export default class List {
-  private displayRange: number = Math.floor(Deno.consoleSize().rows / 4);
+  private displayRange: number;
   public selectedIndex = 0;
   private savedIndex: number | null = null;
   private running = true;
@@ -21,7 +21,8 @@ export default class List {
   public onUnCompact: () => void = () => {};
   public onResult: (result: string | null) => void = () => {};
 
-  constructor(private items: string[]) {
+  constructor(private items: string[], displayRange: number = 20) {
+    this.displayRange = displayRange;
     this.selectedIndex = this.items.length - 1;
     this.generateListItems();
   }

@@ -17,7 +17,7 @@ let list: List | null = null;
 const createList = async (items: string[]) => {
   await list?.exit();
   // await new Promise(resolve => setTimeout(resolve, 1000));
-  list = new List(items);
+  list = new List(items, Math.floor(Deno.consoleSize().rows / 4));
   list.onCompact = (compact) => {
     inputListHistory.push(items);
     createList(compact);
@@ -40,9 +40,9 @@ const createList = async (items: string[]) => {
     const data = encoder.encode(result);
     Deno.writeFileSync(commandFile, data);
     Deno.exit(0);
-  }
+  };
 
   list.display();
-}
+};
 
 createList(inputList);
