@@ -1,7 +1,7 @@
 {
   "tasks": {
-    "dev": "deno run --watch main.ts",
-    "compile": "deno compile --allow-write --allow-read --allow-env main.ts"
+    "dev": "deno run --watch src/main.ts",
+    "compile": "deno compile --output ./improved-history --allow-write --allow-read --allow-env src/main.ts"
   },
   "imports": {
     "@std/assert": "jsr:@std/assert@1"

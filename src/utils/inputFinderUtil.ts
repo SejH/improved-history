@@ -2,7 +2,7 @@ async function main() {
   const input = Deno.stdin;
   input.setRaw(true);
 
-  const data = new Uint8Array(3);
+  const data = new Uint8Array(8);
   const n = await input.read(data);
 
   if (!n) {
