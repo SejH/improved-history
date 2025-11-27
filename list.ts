@@ -220,8 +220,8 @@ export default class List {
     "\u0015": this.compactMode.bind(this), // Crl-u
     "\u0009": this.unCompact.bind(this), // Crl-i
 
-    "\u0008" : this.onText.bind(this, BACKSPACE), // BACKSPACE
-    "\u007F" : this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u0008": this.onText.bind(this, BACKSPACE), // BACKSPACE
+    "\u007F": this.onText.bind(this, BACKSPACE), // BACKSPACE
   };
 
   async display() {
