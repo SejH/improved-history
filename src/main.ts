@@ -1,4 +1,4 @@
-import List from "./list.ts";
+import List from "./components/list.ts";
 
 const [commandFile, historyFile] = Deno.args;
 if (!commandFile || !historyFile) {

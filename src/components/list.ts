@@ -1,5 +1,5 @@
 import { InputHandlers, ListItem, renderList } from "./renderList.ts";
-import color from "./color.ts";
+import color from "../utils/color.ts";
 
 const BACKSPACE = null;
 
