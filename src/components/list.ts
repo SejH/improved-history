@@ -9,7 +9,7 @@ function logToFile(...args: any[]) {
 
 export default class List {
   private displayRange: number;
-  public selectedIndex = 0;
+  private selectedIndex = 0;
   private savedIndex: number | null = null;
   private running = true;
   private listItems: ListItem[] = [];
@@ -48,15 +48,15 @@ export default class List {
     }));
   }
 
-  onUp() {
+  onUp(repeat = 1) {
     this.savedIndex = null;
-    this.selectedIndex = (this.selectedIndex - 1 + this.listItems.length) %
+    this.selectedIndex = (this.selectedIndex - repeat + this.listItems.length) %
       this.listItems.length;
   }
 
-  onDown() {
+  onDown(repeat = 1) {
     this.savedIndex = null;
-    this.selectedIndex = (this.selectedIndex + 1) % this.listItems.length;
+    this.selectedIndex = (this.selectedIndex + repeat) % this.listItems.length;
   }
 
   onStart() {
@@ -219,6 +219,9 @@ export default class List {
 
     "\u0015": this.compactMode.bind(this), // Crl-u
     "\u0009": this.unCompact.bind(this), // Crl-i
+
+    "\u001b[5~": this.onUp.bind(this, 10),
+    "\u001b[6~": this.onDown.bind(this, 10),
 
     "\u0008": this.onText.bind(this, BACKSPACE), // BACKSPACE
     "\u007F": this.onText.bind(this, BACKSPACE), // BACKSPACE

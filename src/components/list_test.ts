@@ -37,28 +37,28 @@ Deno.test(function searchUpTest() {
   const list = new List(input);
 
   list.onText(query);
-  assertEquals(list.selectedIndex, 11);
+  assertEquals(list["selectedIndex"], 11);
   list.searchUp();
-  assertEquals(list.selectedIndex, 5);
+  assertEquals(list["selectedIndex"], 5);
   list.onDown();
-  assertEquals(list.selectedIndex, 6);
+  assertEquals(list["selectedIndex"], 6);
   list.searchUp();
-  assertEquals(list.selectedIndex, 5);
+  assertEquals(list["selectedIndex"], 5);
   list.searchUp();
-  assertEquals(list.selectedIndex, 2);
+  assertEquals(list["selectedIndex"], 2);
 });
 
 Deno.test(function searchDownTest() {
   const list = new List(input);
   list.onText(query);
-  assertEquals(list.selectedIndex, 11);
+  assertEquals(list["selectedIndex"], 11);
   list.onUp();
   list.searchDown();
-  assertEquals(list.selectedIndex, 11);
+  assertEquals(list["selectedIndex"], 11);
   list.onStart();
-  assertEquals(list.selectedIndex, 0);
+  assertEquals(list["selectedIndex"], 0);
   list.searchDown();
-  assertEquals(list.selectedIndex, 2);
+  assertEquals(list["selectedIndex"], 2);
   list.searchDown();
-  assertEquals(list.selectedIndex, 5);
+  assertEquals(list["selectedIndex"], 5);
 });

@@ -53,7 +53,7 @@ export async function renderList(
   }
   showCursor();
 
-  const data = new Uint8Array(3);
+  const data = new Uint8Array(4);
   const n = await input.read(data);
 
   if (!n) {
