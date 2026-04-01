@@ -16,18 +16,9 @@ export type ListItem = {
 };
 
 const encoder = new TextEncoder();
-
-async function writeOutput(output: typeof Deno.stderr, text: string) {
-  await output.write(encoder.encode(text));
-}
-
-async function hideCursor(output: typeof Deno.stderr) {
-  await writeOutput(output, "\u001B[?25l");
-}
-
-async function showCursor(output: typeof Deno.stderr) {
-  await writeOutput(output, "\u001B[?25h");
-}
+const decoder = new TextDecoder();
+const HIDE_CURSOR = "[?25l";
+const SHOW_CURSOR = "[?25h";
 
 export async function renderList(
   list: ListItem[],
@@ -42,7 +33,7 @@ export async function renderList(
   const output = Deno.stderr;
   input.setRaw(true);
 
-  await hideCursor(output);
+  const parts: string[] = [HIDE_CURSOR];
   for (const item of list) {
     const formattedItem = item.format();
 
@@ -51,13 +42,14 @@ export async function renderList(
       ? formattedItem.length - 9
       : formattedItem.length;
     printedLines += Math.ceil(displayedLength / terminalWidth);
-    await writeOutput(output, formattedItem);
+    parts.push(formattedItem);
 
     if (item !== list[list.length - 1]) {
-      await writeOutput(output, "\n");
+      parts.push("\n");
     }
   }
-  await showCursor(output);
+  parts.push(SHOW_CURSOR);
+  await output.write(encoder.encode(parts.join("")));
 
   const data = new Uint8Array(4);
   const n = await input.read(data);
@@ -66,22 +58,20 @@ export async function renderList(
     return;
   }
 
-  await hideCursor(output);
+  const clearParts: string[] = [HIDE_CURSOR];
+  let linesToClear = printedLines;
   // clear list to rerender it
-  while (--printedLines) {
-    // go to beginning of line
-    await writeOutput(output, "\r");
-    // clear line
-    await writeOutput(output, "\x1b[K");
-    // go up
-    await writeOutput(output, "\x1b[A");
+  while (--linesToClear) {
+    // go to beginning of line, clear line, go up
+    clearParts.push("\r\x1b[K\x1b[A");
   }
   // clear the first line
-  await writeOutput(output, "\x1b[K");
-  await showCursor(output);
+  clearParts.push("\x1b[K");
+  clearParts.push(SHOW_CURSOR);
+  await output.write(encoder.encode(clearParts.join("")));
   input.setRaw(false);
 
-  const str = new TextDecoder().decode(data.slice(0, n));
+  const str = decoder.decode(data.slice(0, n));
   if (handlers[str]) {
     handlers[str]();
   } else {
