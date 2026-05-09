@@ -15,12 +15,18 @@ export type ListItem = {
   format: () => string;
 };
 
-function hideCursor() {
-  Deno.stdout.write(new TextEncoder().encode("\u001B[?25l"));
+const encoder = new TextEncoder();
+
+async function writeOutput(output: typeof Deno.stderr, text: string) {
+  await output.write(encoder.encode(text));
 }
 
-function showCursor() {
-  Deno.stdout.write(new TextEncoder().encode("\u001B[?25h"));
+async function hideCursor(output: typeof Deno.stderr) {
+  await writeOutput(output, "\u001B[?25l");
+}
+
+async function showCursor(output: typeof Deno.stderr) {
+  await writeOutput(output, "\u001B[?25h");
 }
 
 export async function renderList(
@@ -33,10 +39,10 @@ export async function renderList(
   let printedLines = 0;
   const terminalWidth = Deno.consoleSize().columns;
   const input = Deno.stdin;
-  const output = Deno.stdout;
+  const output = Deno.stderr;
   input.setRaw(true);
 
-  hideCursor();
+  await hideCursor(output);
   for (const item of list) {
     const formattedItem = item.format();
 
@@ -45,13 +51,13 @@ export async function renderList(
       ? formattedItem.length - 9
       : formattedItem.length;
     printedLines += Math.ceil(displayedLength / terminalWidth);
-    await output.write(new TextEncoder().encode(formattedItem));
+    await writeOutput(output, formattedItem);
 
     if (item !== list[list.length - 1]) {
-      await output.write(new TextEncoder().encode("\n"));
+      await writeOutput(output, "\n");
     }
   }
-  showCursor();
+  await showCursor(output);
 
   const data = new Uint8Array(4);
   const n = await input.read(data);
@@ -60,19 +66,19 @@ export async function renderList(
     return;
   }
 
-  hideCursor();
+  await hideCursor(output);
   // clear list to rerender it
   while (--printedLines) {
     // go to beginning of line
-    await output.write(new TextEncoder().encode("\r"));
+    await writeOutput(output, "\r");
     // clear line
-    await output.write(new TextEncoder().encode("\x1b[K"));
+    await writeOutput(output, "\x1b[K");
     // go up
-    await output.write(new TextEncoder().encode("\x1b[A"));
+    await writeOutput(output, "\x1b[A");
   }
   // clear the first line
-  await output.write(new TextEncoder().encode("\x1b[K"));
-  showCursor();
+  await writeOutput(output, "\x1b[K");
+  await showCursor(output);
   input.setRaw(false);
 
   const str = new TextDecoder().decode(data.slice(0, n));

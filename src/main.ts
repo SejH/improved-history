@@ -1,8 +1,8 @@
 import List from "./components/list.ts";
 
-const [commandFile, historyFile] = Deno.args;
-if (!commandFile || !historyFile) {
-  console.error("Usage: improved-history <commandFile> <historyFile>");
+const [historyFile] = Deno.args;
+if (!historyFile) {
+  console.error("Usage: improved-history <historyFile>");
   Deno.exit(1);
 }
 
@@ -35,10 +35,7 @@ const createList = async (items: string[]) => {
     if (!result) {
       return;
     }
-    // write command to commandFile to be read by shell
-    const encoder = new TextEncoder();
-    const data = encoder.encode(result);
-    Deno.writeFileSync(commandFile, data);
+    console.log(result);
     Deno.exit(0);
   };
 
