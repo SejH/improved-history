@@ -237,7 +237,7 @@ Deno.test("list item formatting highlights selection and search matches", () => 
   list.onStart();
   list.onText("deno");
 
-  const formatted = list["listItems"].map((item) => item.format());
+  const formatted = [0, 1, 2].map((i) => list["formatListItem"](i));
   assertEquals(formatted[0], color("> deno test", "FgCyan"));
   assertEquals(formatted[1], "1 git status");
   assertEquals(formatted[2], color("2 deno run", "FgGreen"));

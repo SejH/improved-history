@@ -12,7 +12,6 @@ export default class List {
   private selectedIndex = 0;
   private savedIndex: number | null = null;
   private running = true;
-  private listItems: ListItem[] = [];
   public query = "";
   public searchResults: number[] = [];
   public result: string | null = null;
@@ -24,39 +23,35 @@ export default class List {
   constructor(private items: string[], displayRange: number = 20) {
     this.displayRange = displayRange;
     this.selectedIndex = this.items.length - 1;
-    this.generateListItems();
   }
 
-  private generateListItems() {
-    this.listItems = this.items.map((x, i) => ({
-      format: () => {
-        const numLen = (n: number) => {
-          return n.toString().length;
-        };
-        const paddingLength = numLen(this.items.length);
-        const padding = (reduce = 0) => {
-          return " ".repeat(paddingLength - reduce);
-        };
-        if (this.selectedIndex === i) {
-          return color(`${padding(1)}> ${x}`, "FgCyan");
-        }
-        if (this.searchResults.includes(i)) {
-          return color(`${i}${padding(numLen(i))} ${x}`, "FgGreen");
-        }
-        return `${i}${padding(numLen(i))} ${x}`;
-      },
-    }));
+  private formatListItem(i: number) {
+    const x = this.items[i];
+    const numLen = (n: number) => {
+      return n.toString().length;
+    };
+    const paddingLength = numLen(this.items.length);
+    const padding = (reduce = 0) => {
+      return " ".repeat(paddingLength - reduce);
+    };
+    if (this.selectedIndex === i) {
+      return color(`${padding(1)}> ${x}`, "FgCyan");
+    }
+    if (this.searchResults.includes(i)) {
+      return color(`${i}${padding(numLen(i))} ${x}`, "FgGreen");
+    }
+    return `${i}${padding(numLen(i))} ${x}`;
   }
 
   onUp(repeat = 1) {
     this.savedIndex = null;
-    this.selectedIndex = (this.selectedIndex - repeat + this.listItems.length) %
-      this.listItems.length;
+    this.selectedIndex = (this.selectedIndex - repeat + this.items.length) %
+      this.items.length;
   }
 
   onDown(repeat = 1) {
     this.savedIndex = null;
-    this.selectedIndex = (this.selectedIndex + repeat) % this.listItems.length;
+    this.selectedIndex = (this.selectedIndex + repeat) % this.items.length;
   }
 
   onStart() {
@@ -64,7 +59,7 @@ export default class List {
   }
 
   onEnd() {
-    this.selectedIndex = this.listItems.length - 1;
+    this.selectedIndex = this.items.length - 1;
   }
 
   onEnter() {
@@ -175,16 +170,21 @@ export default class List {
     if (start < 0) {
       start = 0;
       end = this.displayRange;
-    } else if (end > this.listItems.length - 1) {
-      end = this.listItems.length;
+    } else if (end > this.items.length - 1) {
+      end = this.items.length;
       start = end - this.displayRange;
     }
-    if (this.listItems.length <= this.displayRange) {
+    if (this.items.length <= this.displayRange) {
       start = 0;
-      end = this.listItems.length;
+      end = this.items.length;
     }
+    start = Math.trunc(start);
+    end = Math.trunc(end);
 
-    const list = this.listItems.slice(start, end);
+    const list: ListItem[] = [];
+    for (let i = start; i < end; i++) {
+      list.push({ format: () => this.formatListItem(i) });
+    }
     list.push({ format: () => `Search: ${this.query}` });
     await renderList(list, {
       handlers: this.inputHandlers,
