@@ -1,4 +1,5 @@
 import List from "./components/list.ts";
+import { parseHistoryText } from "./utils/history.ts";
 
 const [historyFile] = Deno.args;
 if (!historyFile) {
@@ -7,15 +8,13 @@ if (!historyFile) {
 }
 
 const historyText = await Deno.readTextFile(historyFile);
-const inputList = historyText.split("\n")
-  .filter((l) => !!l)
-  .map((l) => (l.match(/^[^;]+;(.+)$/)?.[1] || l));
+const inputList = parseHistoryText(historyText);
 
 const inputListHistory: string[][] = [];
 
 let list: List | null = null;
 const createList = async (items: string[]) => {
-  await list?.exit();
+  await list ?.exit();
   // await new Promise(resolve => setTimeout(resolve, 1000));
   list = new List(items, Math.floor(Deno.consoleSize().rows / 4));
   list.onCompact = (compact) => {
