@@ -131,7 +131,7 @@ export default class List {
     }
 
     this.selectedIndex = this.searchResults
-      .find((resultIndex) => resultIndex >= this.selectedIndex) ||
+      .find((resultIndex) => resultIndex >= this.selectedIndex) ??
       this.searchResults[this.searchResults.length - 1];
   }
 

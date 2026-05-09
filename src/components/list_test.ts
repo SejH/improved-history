@@ -1,5 +1,6 @@
 import { assertEquals } from "@std/assert";
 import List from "./list.ts";
+import color from "../utils/color.ts";
 
 const input = [
   ": 1743326021:0;source ~/.zshrc",
@@ -27,16 +28,43 @@ const input = [
 const query = "deno";
 const result = [2, 5, 11];
 
-Deno.test(function searchTest() {
+Deno.test("search finds all case-insensitive matches", () => {
   const list = new List(input);
+
   list.onText(query);
+
   assertEquals(list.searchResults, result);
 });
 
-Deno.test(function searchUpTest() {
+Deno.test("search supports multi-word queries in any case", () => {
+  const list = new List([
+    "deno run compile",
+    "git status",
+    "Deno test --watch",
+    "deno task dev",
+  ]);
+
+  list.onText("DENO run");
+
+  assertEquals(list.searchResults, [0]);
+  assertEquals(list["selectedIndex"], 0);
+});
+
+Deno.test("search selects a matching first item when starting at index zero", () => {
+  const list = new List(["deno run compile", "deno test", "git status"]);
+
+  list.onStart();
+  list.onText("deno");
+
+  assertEquals(list.searchResults, [0, 1]);
+  assertEquals(list["selectedIndex"], 0);
+});
+
+Deno.test("searchUp moves to previous matches without overshooting the first match", () => {
   const list = new List(input);
 
   list.onText(query);
+
   assertEquals(list["selectedIndex"], 11);
   list.searchUp();
   assertEquals(list["selectedIndex"], 5);
@@ -48,9 +76,20 @@ Deno.test(function searchUpTest() {
   assertEquals(list["selectedIndex"], 2);
 });
 
-Deno.test(function searchDownTest() {
+Deno.test("searchUp wraps to the last match when selection is after all results", () => {
   const list = new List(input);
+
+  list.onEnd();
   list.onText(query);
+
+  assertEquals(list["selectedIndex"], 11);
+});
+
+Deno.test("searchDown moves to next matches and stops at the last match", () => {
+  const list = new List(input);
+
+  list.onText(query);
+
   assertEquals(list["selectedIndex"], 11);
   list.onUp();
   list.searchDown();
@@ -61,4 +100,145 @@ Deno.test(function searchDownTest() {
   assertEquals(list["selectedIndex"], 2);
   list.searchDown();
   assertEquals(list["selectedIndex"], 5);
+  list.searchDown();
+  assertEquals(list["selectedIndex"], 11);
+  list.searchDown();
+  assertEquals(list["selectedIndex"], 11);
+});
+
+Deno.test("arrow navigation wraps and supports repeated movement", () => {
+  const list = new List(["one", "two", "three"]);
+
+  assertEquals(list["selectedIndex"], 2);
+  list.onDown();
+  assertEquals(list["selectedIndex"], 0);
+  list.onUp();
+  assertEquals(list["selectedIndex"], 2);
+  list.onUp(2);
+  assertEquals(list["selectedIndex"], 0);
+  list.onDown(4);
+  assertEquals(list["selectedIndex"], 1);
+});
+
+Deno.test("start and end navigation select list boundaries", () => {
+  const list = new List(input);
+
+  list.onStart();
+  assertEquals(list["selectedIndex"], 0);
+  list.onEnd();
+  assertEquals(list["selectedIndex"], input.length - 1);
+});
+
+Deno.test("backspace updates query and clears results when query becomes empty", () => {
+  const list = new List(input);
+
+  list.onStart();
+  list.onDown(7);
+  list.onText("deno");
+  assertEquals(list["selectedIndex"], 11);
+
+  list.onText(null);
+  assertEquals(list.query, "den");
+  assertEquals(list.searchResults, [2, 5, 11]);
+
+  list.onText(null);
+  list.onText(null);
+  list.onText(null);
+  assertEquals(list.query, "");
+  assertEquals(list.searchResults, []);
+  assertEquals(list["selectedIndex"], 11);
+});
+
+Deno.test("clear resets query, results, and saved selection", () => {
+  const list = new List(input);
+
+  list.onStart();
+  list.onDown(4);
+  list.onText("deno");
+  assertEquals(list["selectedIndex"], 5);
+
+  list.onClear();
+
+  assertEquals(list.query, "");
+  assertEquals(list.searchResults, []);
+  assertEquals(list["selectedIndex"], 4);
+});
+
+Deno.test("no-match search keeps current selection and records no results", () => {
+  const list = new List(input);
+
+  list.onStart();
+  list.onText("not-present");
+
+  assertEquals(list.searchResults, []);
+  assertEquals(list["selectedIndex"], 0);
+});
+
+Deno.test("enter stores and reports the selected result", () => {
+  const list = new List(["first", "second", "third"]);
+  let reported: string | null = null;
+  list.onResult = (result) => {
+    reported = result;
+  };
+
+  list.onDown();
+  list.onEnter();
+
+  assertEquals(list.result, "first");
+  assertEquals(reported, "first");
+  assertEquals(list["running"], false);
+});
+
+Deno.test("compact mode emits unique matching commands in result order", () => {
+  const list = new List([
+    "deno test",
+    "git status",
+    "deno test",
+    "deno run compile",
+  ]);
+  let compacted: string[] | null = null;
+  list.onCompact = (compact) => {
+    compacted = compact;
+  };
+
+  list.onText("deno");
+  list.compactMode();
+
+  assertEquals(compacted, ["deno test", "deno run compile"]);
+});
+
+Deno.test("compact mode does nothing without search results", () => {
+  const list = new List(["git status"]);
+  let called = false;
+  list.onCompact = () => {
+    called = true;
+  };
+
+  list.compactMode();
+
+  assertEquals(called, false);
+});
+
+Deno.test("unCompact delegates to callback", () => {
+  const list = new List(["git status"]);
+  let called = false;
+  list.onUnCompact = () => {
+    called = true;
+  };
+
+  list.unCompact();
+
+  assertEquals(called, true);
+});
+
+Deno.test("list item formatting highlights selection and search matches", () => {
+  const list = new List(["deno test", "git status", "deno run"]);
+
+  list.onStart();
+  list.onText("deno");
+
+  const formatted = list["listItems"].map((item) => item.format());
+  assertEquals(formatted[0], color("> deno test", "FgCyan"));
+  assertEquals(formatted[1], "1 git status");
+  assertEquals(formatted[2], color("2 deno run", "FgGreen"));
 });
