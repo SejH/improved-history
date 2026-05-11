@@ -37,10 +37,7 @@ export async function renderList(
   for (const item of list) {
     const formattedItem = item.format();
 
-    // Hack to get the length of the displayed characters
-    const displayedLength = formattedItem.endsWith("\x1b[0m")
-      ? formattedItem.length - 9
-      : formattedItem.length;
+    const displayedLength = formattedItem.replace(/\x1b\[[0-9;]*m/g, "").length;
     printedLines += Math.ceil(displayedLength / terminalWidth);
     parts.push(formattedItem);
 
