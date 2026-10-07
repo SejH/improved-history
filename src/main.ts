@@ -14,7 +14,7 @@ const inputListHistory: string[][] = [];
 
 let list: List | null = null;
 const createList = async (items: string[]) => {
-  await list ?.exit();
+  await list?.exit();
   // await new Promise(resolve => setTimeout(resolve, 1000));
   list = new List(items, Math.floor(Deno.consoleSize().rows / 4));
   list.onCompact = (compact) => {
