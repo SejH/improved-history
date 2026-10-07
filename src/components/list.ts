@@ -112,6 +112,7 @@ export default class List {
 
   onText(s: string | typeof BACKSPACE) {
     if (s === BACKSPACE) {
+      this.searchResults = [];
       this.query = this.query.slice(0, this.query.length - 1);
     } else {
       if (this.query === "") {
@@ -139,6 +140,16 @@ export default class List {
 
     if (this.query.length === 0) {
       return [];
+    }
+
+    if (this.searchResults.length !== 0) {
+      return this.searchResults.reduce((acc, index) => {
+        const line = this.items[index];
+        if (match(line, this.query)) {
+          acc.push(index);
+        }
+        return acc;
+      }, [] as number[]);
     }
 
     return this.items.reduce((acc, line, index) => {

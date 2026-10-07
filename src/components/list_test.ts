@@ -50,6 +50,18 @@ Deno.test("search supports multi-word queries in any case", () => {
   assertEquals(list["selectedIndex"], 0);
 });
 
+Deno.test("backspace widens search results again", () => {
+  const list = new List(["git checkout main", "git commit", "git status"]);
+
+  list.onText("git c");
+  list.onText("h");
+  assertEquals(list.searchResults, [0]);
+
+  list.onText(null); // BACKSPACE
+
+  assertEquals(list.searchResults, [0, 1]);
+});
+
 Deno.test("search selects a matching first item when starting at index zero", () => {
   const list = new List(["deno run compile", "deno test", "git status"]);
 
